@@ -22,7 +22,7 @@ The owner adds staff logins in **Settings → Team logins**.
 ## Deploy to Vercel
 
 1. Push this folder to GitHub and import it in Vercel.
-2. In Vercel project settings set **Root Directory = `web`**, Framework = *Other*, no build command.
+2. Keep the default settings (Root Directory = the repo root). `vercel.json` serves the `web` folder; no build step.
 3. Deploy. That's it.
 
 ### WhatsApp (later)
@@ -32,7 +32,7 @@ Until an account is connected, *Send notifications* opens WhatsApp with each mes
 To send automatically, add these Environment Variables in Vercel, redeploy, and type the same
 `WA_APP_KEY` in the app under **Settings → Automatic WhatsApp**:
 `WA_TOKEN`, `WA_PHONE_ID`, `WA_APP_KEY` (and optionally `WA_TEMPLATE`, `WA_TEMPLATE_LANG`).
-The function is `web/api/send-whatsapp.js` (Meta WhatsApp Cloud API).
+The function is `api/send-whatsapp.js` (Meta WhatsApp Cloud API).
 
 ### What gets sent
 - Customer: booking confirmation, 2 days before, 1 day before, and a notice if date/time changes.
@@ -57,6 +57,6 @@ web/css/app.css         styles (mobile first)
 web/js/store.js         local storage data + reminder engine
 web/js/app.js           login, home, bookings, booking form
 web/js/pages.js         calendar, customers, food items, WhatsApp, settings
-web/api/send-whatsapp.js  Vercel function for automatic WhatsApp (optional)
+api/send-whatsapp.js      Vercel function for automatic WhatsApp (optional)
 ```
-The older Python/SQLite version (`app.py`, `catering/`, `static/`) is kept for reference and is not used by the web app.
+The older Python/SQLite version (`legacy-python/`) is kept for reference and is not used by the web app.

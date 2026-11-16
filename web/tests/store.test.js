@@ -21,7 +21,8 @@ let n = 0;
 const test = (name, fn) => { fn(); n++; console.log('ok -', name); };
 
 test('phone formats', () => {
-  ['9876543210', '09876543210', '+91 98765 43210', '0091 9876543210'].forEach(p => assert.strictEqual(S.normPhone(p), '+919876543210'));
+  ['9876543210', '09876543210', '+91 98765 43210', '0091 9876543210'].forEach(p => assert.strictEqual(S.normPhone(p, '91'), '+919876543210'));
+  ['0412 345 678', '412345678', '+61 412 345 678', '0061412345678'].forEach(p => assert.strictEqual(S.normPhone(p), '+61412345678')); // Australia is the default
   assert.throws(() => S.normPhone('123'));
 });
 
