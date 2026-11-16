@@ -1,0 +1,22 @@
+<!doctype html>
+<!-- Test helper: fills this browser with demo data and opens a page. Usage: tests/demo.html#/bookings -->
+<meta charset="utf-8">
+<script src="../js/store.js"></script>
+<script>
+(async () => {
+  if (localStorage.getItem('catering.v2') && !location.search.includes('force')) {
+    document.body.textContent = 'This browser already has data. Demo data was NOT loaded (add ?force to replace it).';
+    return;
+  }
+  Store._setDB(Store.emptyDB());
+  const db = Store.db;
+  db.business.name = 'Demo Caterers';
+  const phone = '+919000000001';
+  db.users.push({ id: 'u1', name: 'Demo Owner', phone, role: 'owner', pass: await Store.hashPass(phone, 'demo1234'), active: true });
+  db.waNumbers.push({ id: 'w1', name: 'Demo Owner', phone, role: 'owner' });
+  Store.seedItems(); Store.seedSamples('Demo Owner'); Store.log('Demo Owner', 'set up the app');
+  Store.sync(); Store.save();
+  localStorage.setItem('catering.session', 'u1');
+  location.replace('../index.html' + (location.hash || '#/'));
+})();
+</script>

@@ -1,0 +1,7 @@
+data/
+config.env
+__pycache__/
+*.pyc
+TEST-LOGIN.txt
+.claude/
+.vercel/

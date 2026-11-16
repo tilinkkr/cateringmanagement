@@ -1,0 +1,1 @@
+"""Catering Event Manager package."""

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Common View</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    html { font-size: 20px; }
+    .board { padding: 1.25rem 1.5rem 3rem; max-width: 1600px; margin: 0 auto; }
+    .cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; align-items: start; }
+    .col h2 { display: flex; align-items: center; gap: .5rem; padding: .6rem 1rem; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); }
+    .col.today h2 { background: var(--red); color: #fff; border-color: var(--red); }
+    .col.tomorrow h2 { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .bcard { background: var(--surface); border: 1px solid var(--line); border-left: 10px solid var(--green); border-radius: 14px; padding: 1rem 1.1rem; margin-top: .8rem; box-shadow: var(--shadow); }
+    .bcard.red { border-left-color: var(--red); }
+    .bcard.amber { border-left-color: var(--accent); }
+    .bcard .t { font-size: 1.5rem; font-weight: 800; }
+    .bcard .time { font-size: 1.6rem; font-weight: 800; color: var(--primary-dark); }
+    .bcard ul { margin: .4rem 0 0; padding-left: 1.2rem; }
+    .bcard li { font-size: 1.05rem; }
+    .bcard .meta { display: flex; flex-wrap: wrap; gap: .3rem 1rem; color: var(--muted); margin: .25rem 0; }
+    .bcard .meta span { display: inline-flex; gap: .3rem; align-items: center; }
+    @media (max-width: 1000px) { .cols { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo" id="logo"></span><span id="biz">Catering</span>
+      <span class="badge" style="background:rgba(255,255,255,.18);color:#fff;margin-left:.5rem">Common View · read only</span></div>
+    <div class="clock"><b id="clockTime"></b><span id="clockDate"></span></div>
+    <div class="who">
+      <button class="btn" id="fs"></button>
+      <a class="btn" href="/" id="adminLink"></a>
+    </div>
+  </header>
+  <div class="board">
+    <div id="alerts"></div>
+    <div class="cols">
+      <section class="col today"><h2 id="h1"></h2><div id="c1"></div></section>
+      <section class="col tomorrow"><h2 id="h2"></h2><div id="c2"></div></section>
+      <section class="col"><h2 id="h3"></h2><div id="c3"></div></section>
+    </div>
+    <p class="muted small" style="text-align:center;margin-top:2rem" id="updated"></p>
+  </div>
+  <script src="/static/js/icons.js"></script>
+  <script>
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const pad = n => String(n).padStart(2, '0');
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const parseD = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+  const fmtTime = t => { if (!t) return ''; let [h, m] = t.split(':').map(Number); const ap = h >= 12 ? 'PM' : 'AM'; return `${h % 12 || 12}:${pad(m)} ${ap}`; };
+  const fmtDay = s => { const d = parseD(s); return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`; };
+
+  $('#logo').innerHTML = icon('utensils', 24);
+  $('#fs').innerHTML = icon('expand') + '<span class="t">Full screen</span>';
+  $('#adminLink').innerHTML = icon('lock') + '<span class="t">Staff login</span>';
+  $('#h1').innerHTML = icon('alert') + ' TODAY';
+  $('#h2').innerHTML = icon('clock') + ' TOMORROW';
+  $('#h3').innerHTML = icon('calendar') + ' NEXT 7 DAYS';
+  $('#fs').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
+
+  function card(e, showDay) {
+    const cls = e.urgency === 'red' ? 'red' : e.urgency === 'amber' ? 'amber' : '';
+    return `<div class="bcard ${cls}">
+      ${showDay ? `<div class="badge b-grey">${fmtDay(e.event_date)}</div>` : ''}
+      <div class="row between"><span class="time">${e.event_time ? fmtTime(e.event_time) : '<span style="color:var(--red)">Time not fixed</span>'}</span>
+        ${e.status === 'enquiry' ? '<span class="badge b-blue">Enquiry</span>' : ''}</div>
+      <div class="t">${esc(e.title)}</div>
+      <div class="meta"><span>${icon('users', 20)} <b>${e.guest_count}</b>&nbsp;guests</span>${e.venue ? `<span>${icon('pin', 20)} ${esc(e.venue)}</span>` : ''}
+        ${e.assigned_name ? `<span>${icon('user', 20)} ${esc(e.assigned_name)}</span>` : ''}</div>
+      ${e.items.length ? `<ul>${e.items.map(i => `<li><b>${esc(i.item_name)}</b> — ${i.quantity} ${esc(i.unit)}${i.notes ? ` (${esc(i.notes)})` : ''}</li>`).join('')}</ul>` : '<span class="badge b-amber">No food items entered</span>'}
+      ${e.special_instructions ? `<div class="special" style="margin-top:.6rem">${icon('alert', 20)} ${esc(e.special_instructions)}</div>` : ''}
+      ${e.flags.length ? `<div class="row" style="margin-top:.5rem;gap:.3rem">${e.flags.map(f => `<span class="badge b-${f.level === 'red' ? 'red' : 'amber'}">${esc(f.text)}</span>`).join('')}</div>` : ''}
+    </div>`;
+  }
+  const none = t => `<div class="empty">${icon('check', 44)}<p>${t}</p></div>`;
+
+  async function load() {
+    try {
+      const r = await fetch('/api/board');
+      const d = await r.json();
+      $('#biz').textContent = d.business_name;
+      document.title = d.business_name + ' — Common View';
+      const today = d.now.slice(0, 10);
+      const t = parseD(today); t.setDate(t.getDate() + 1);
+      const tomorrow = `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`;
+      const isOn = (e, day) => e.event_date <= day && (e.end_date || e.event_date) >= day;
+      const a = d.events.filter(e => isOn(e, today));
+      const b = d.events.filter(e => isOn(e, tomorrow) && !isOn(e, today));
+      const c = d.events.filter(e => e.event_date > tomorrow);
+      $('#c1').innerHTML = a.map(e => card(e)).join('') || none('No events today');
+      $('#c2').innerHTML = b.map(e => card(e)).join('') || none('No events tomorrow');
+      $('#c3').innerHTML = c.map(e => card(e, true)).join('') || none('Nothing else this week');
+      const red = d.events.filter(e => e.urgency === 'red' && e.status === 'confirmed' && !e.final_confirmed_at);
+      $('#alerts').innerHTML = red.length ? `<div class="alert red">${icon('alert', 32)}<div><b style="font-size:1.3rem">WARNING: ${red.length} event${red.length > 1 ? 's' : ''} within 2 days not yet re-confirmed with the customer</b>
+        ${red.map(e => esc(e.title) + ' — ' + fmtDay(e.event_date)).join(' · ')}</div></div>` : '';
+      $('#updated').textContent = 'Updated ' + new Date().toLocaleTimeString() + ' · refreshes every minute';
+    } catch (err) {
+      $('#updated').innerHTML = '<span class="badge b-red">Cannot reach the program — showing last known data</span>';
+    }
+  }
+  function tick() {
+    const n = new Date();
+    $('#clockTime').textContent = fmtTime(`${pad(n.getHours())}:${pad(n.getMinutes())}`);
+    $('#clockDate').textContent = `${DAYS[n.getDay()]}, ${n.getDate()} ${MONTHS[n.getMonth()]} ${n.getFullYear()}`;
+  }
+  tick(); load();
+  setInterval(tick, 15000);
+  setInterval(load, 60000);
+  </script>
+</body>
+</html>
